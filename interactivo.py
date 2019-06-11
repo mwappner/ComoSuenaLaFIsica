@@ -25,9 +25,14 @@ import tkinter as tk
 from tkinter import ttk
 
 from itertools import chain
+from threading import Thread
 import simpleaudio as sa
 
-valores_que_cambian = 'fs', 'duracion', 'frec', 'volumen'
+valores_que_cambian = {'fs':32000, #en Hz
+                       'duracion':1, #en seg
+                       'frec':150, #en Hz
+                       'volumen':80 #en %
+                       }
 
 class Plot(Figure):
     
@@ -37,23 +42,45 @@ class Plot(Figure):
         super().__setattr__(name, value)
         if name in valores_que_cambian:
             self.changed = True
+            if hasattr(self, 'show_discreto') and self.show_discreto:
+                self.update()
                
-    def __init__(self, vars_amp, vars_fas, fs=32000, duracion=1, frec=150, volumen=100, *a, **k):
+    def __init__(self, vars_amp, vars_fas, fs=None, duracion=None, frec=None, volumen=None, *a, **k):
         
         #variables de la curva
         self.amplis = vars_amp
         self.fases = vars_fas
-        
+               
         #parámetros del sonido
-        self.fs = fs #Hz
-        self.duracion  = duracion #segundos
-        self.frec = frec #Hz
-        self.volumen = volumen #en %
-        self._pers_shown = 1
+        self.reset_params()
 
         super().__init__(*a, **k)
-        self.reset() #poner los valores iniciales
+        self.reset_mode() #poner los valores iniciales
         self.init_plot() 
+
+    @property
+    def show_discreto(self):
+        return self._show_discreto
+    @show_discreto.setter
+    def show_discreto(self, value):
+        self._show_discreto = bool(value)
+        self.discreta.set_visible(self.show_discreto)
+        self.update()
+        
+    def _make_discreta(self):
+        '''Plotea la curva discreta. Crea el vector de tiempo y la línea correspondientes.'''
+        self.t_discreto = self._make_t_discreto()
+        
+        #intento borrar la anterior
+        try:
+            self.discreta.remove()
+        except (ValueError, AttributeError):
+            pass                
+        
+        self.discreta = self.axes[1].plot(self.t_discreto/self.t_discreto[-1], 
+                                 self.senos(self.t_discreto),
+                                 '--', color='C1')[0]
+        self.discreta.set_visible(self.show_discreto)
 
     @property
     def pers_shown(self):
@@ -62,8 +89,19 @@ class Plot(Figure):
     def pers_shown(self, value):
         value = int(np.clip(value, 1, 10)) #entro 0 y 10
         self._pers_shown = value
-        self.t = np.linspace(0, value, 800)
+        #acualizo vectores de tiempo
+        self.t = np.linspace(0, self.pers_shown, 800)
+        self.t_discreto = self._make_t_discreto()
+        
         self.update()
+        
+    def _make_t_discreto(self):
+        puntos = round(self.pers_shown * self.fs / self.frec)
+        if puntos>=800:
+            return self.t #no más puntos que t
+        else:
+            puntos = max(puntos, 2)
+            return np.linspace(0, self.pers_shown, puntos)
 
     def init_plot(self):
         '''Inicializa la fig con los dos plots. Linquea la modificación de los 
@@ -76,17 +114,17 @@ class Plot(Figure):
 
     def put_canvas(self, master, mode='grid', *args, **kwargs):
         '''Pone la imagen en la ventana.'''
-        self.canvas = FigureCanvasTkAgg(self, master=master)
+        self.my_canvas = FigureCanvasTkAgg(self, master=master)
 
         if mode.lower()=='grid':
-            self.canvas.get_tk_widget().grid(*args, **kwargs)
+            self.my_canvas.get_tk_widget().grid(*args, **kwargs)
         elif mode.lower()=='pack':
-            self.canvas.get_tk_widget().pack(*args, **kwargs)
+            self.my_canvas.get_tk_widget().pack(*args, **kwargs)
         elif mode.lower()=='place':    
-            self.canvas.get_tk_widget().place(*args, **kwargs)  
+            self.my_canvas.get_tk_widget().place(*args, **kwargs)  
         else:
             raise ValueError("Mode must be 'grid', 'place', or 'pack'.") 
-        self.canvas.draw()
+        self.my_canvas.draw()
 
     def barras(self):
         '''Gráfico de barras de las amplitudes.'''
@@ -111,26 +149,55 @@ class Plot(Figure):
     def curva(self):
         '''Gráfico de la curva de un período del sonido.'''
         ax = self.axes[1]
-        self.t = np.linspace(0, self.pers_shown, 800)
+        self.t = np.linspace(0, self.pers_shown, 800)      
         self.l = ax.plot(self.t, self.senos(self.t))[0] #el [0] para tomar la línea del plot
-        ax.set_xticks([],[]) #sin ticks en los ejes
+        self._make_discreta()
+        
+#        ax.set_xticks([],[]) #sin ticks en los ejes
         ax.set_yticks([],[]) #sin ticks en los ejes
         ax.set_xlabel('Período [aprox. {}ms]'.format(1000/self.fs))
         
     def update(self, *a): #mejorar tomando índice cambiado (acelerar)
         '''Actualizo gráficos.'''
-        for b, v in zip(self.bars, self.amplis):
-            b.set_height(v.get())
-        self.l.set_ydata(self.senos(self.t))
-        self.canvas.draw()
-        self.changed = True
+        #Las barras:
+        try: 
+            for b, v in zip(self.bars, self.amplis):
+                b.set_height(v.get())
+            #Los senos:
+            self.l.set_ydata(self.senos(self.t))
+            if self.show_discreto: #solo actualizo si la estoy mostrando
+                if self.changed: #si cambiaron fs o frec, grafico de cero
+                    self._make_discreta()
+                else:
+                    self.discreta.set_ydata(self.senos(self.t_discreto))
+            #Muestro lo nuevo
+            self.my_canvas.draw()
+            self.changed = True
+        except AttributeError:
+            pass
         
-    def reset(self):
-        '''Reinicio todos los valores de los parámetros.'''
+    def reset_mode(self):
+        '''Reinicio todos los valores de amplitudes y fases.'''
         for v in chain(self.amplis[1:], self.fases):
             v.set(0)
         self.amplis[0].set(100)
         self.changed = True
+        
+    def reset_params(self):
+        '''Reinicio todos los valores de los parámetros.'''
+        
+        ### HAY QUE MODIFICAR LAS VARIABLES!!!
+        
+        #parametros del sonido
+        for k, v in valores_que_cambian.items():
+            setattr(self, k, v)
+            
+        #parametros del gráfico
+        self._show_discreto = False
+        self.pers_shown = 1
+        
+        self.update()
+
         
     def create_sound(self):
         '''Crea el sonido a reproducir, sólo si hubo cambios desde la última vez.'''
@@ -145,7 +212,8 @@ class Plot(Figure):
         self.player = sa.play_buffer(self.create_sound(), 1, 2, self.fs)
         
     def stop(self):
-        self.player.stop()
+        if hasattr(self, 'player'):
+            self.player.stop()
     
     def call_or_place(self, new, old):
         '''Reemplaza los valores en old por los dados en new, que puede ser un
@@ -162,6 +230,7 @@ class Plot(Figure):
     def set_mode(self, amplitudes, fases=[]):
         self.call_or_place(amplitudes, self.amplis)
         self.call_or_place(fases, self.fases)
+
 
 #=====================================
 ###### Defino modos preseteados#######
@@ -213,7 +282,7 @@ def trompeta():
     pass
 
 def ejemplo():
-    amplitudes = [100, 90, 45, 32, 55, 32, 57, 31, 11]
+    amplitudes = [100, 90, 45, 32, 55, 32, 57, 31, 11, 34, 12, 56, 89]
     fases = [0, 10, 25, 35, 100, 10]
     p.set_mode(amplitudes, fases)
 
@@ -229,6 +298,7 @@ modos = {'cuadrada':cuadrada,
 def switcher(*a):
     modos[cb.get()]()
   
+    
 #==========================================
 ###### Defino cosas para la interfaz#######
 #==========================================
@@ -262,7 +332,7 @@ def makeone(master, name, ind):
     return toolbar
 
 
-def paramvar(paramname, dtype='int'):
+def paramvar(paramname, dtype='int', default=0):
     if dtype=='int':
         var = tk.IntVar()
     elif dtype=='double':
@@ -276,7 +346,7 @@ def paramvar(paramname, dtype='int'):
                 "dtype must be one of ('int', 'double', 'str', 'bool'), but was '{}'".format(dtype))
         
     #Intenta poner el valor existente como inicial. Si no hay pone cero
-    var.set(getattr(p, paramname, 0))
+    var.set(getattr(p, paramname, default))
     var.trace('w', lambda *a: setattr(p, paramname, var.get()))
     return var
     
@@ -284,10 +354,31 @@ def paramvar(paramname, dtype='int'):
 def makeparam(master, name, unit, paramname, span=[0,100], dtype='int'):
     frame = tk.Frame(master=master)
     tk.Label(master=frame, text=name).grid(columnspan=2)
-    tk.Spinbox(master=frame, textvariable=paramvar(paramname, dtype),
+    tk.Spinbox(master=frame,
+               textvariable=paramvar(paramname, dtype, default=span[0]),
                from_=span[0], to=span[1], width=6).grid(row=1, column=0)
     tk.Label(master=frame, text=unit).grid(row=1, column=1)
     return frame
+
+def play(boton):
+    def inner():
+        boton.config(relief=tk.SUNKEN, state=tk.DISABLED)
+        p.play()
+        p.player_after_id = boton.after(int(p.duracion * 1000), levantar(boton))
+    return inner
+
+def levantar(boton):
+    def inner():
+        boton.config(relief=tk.RAISED, state='normal')
+    return inner
+
+def stop(boton):
+    def inner():
+        p.stop()
+        levantar(boton)()
+        if hasattr(p, 'player_after_id'):
+            boton.after_cancel(p.player_after_id)
+    return inner
 
 #=============================
 ###### Creo la interfaz#######
@@ -298,7 +389,7 @@ root = tk.Tk()
 #root.geometry('350x200')
 
 #Variables que van a tener las funciones y que los botones modifican
-cant = 20
+cant = 10 #cuántos armónicos uso?
 vars_amp = [tk.DoubleVar() for _ in range(cant)]
 vars_fas = [tk.DoubleVar() for _ in range(cant)]
 
@@ -318,10 +409,18 @@ botonera.grid(row=0, column=cant+1, rowspan=2, padx=10)
 #Parámetros
 botonera_params = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
 botonera_params.pack(fill=tk.X, pady=10)
-makeparam(botonera_params, 'Frecuencia', 'Hz', 'frec', span=[0, 22000]).pack()
-makeparam(botonera_params, 'Duración', 'seg', 'duracion', dtype='double').pack()
-makeparam(botonera_params, 'Frecuencia\nde sampleo', 'Hz', 'fs', span=[0,44200]).pack(pady=20)
-makeparam(botonera_params, 'Períodos', '', 'pers_shown', span=[1,10]).pack()
+cont_1 = tk.Frame(botonera_params)
+cont_1.pack(pady=10)
+makeparam(cont_1, 'Frecuencia', 'Hz', 'frec', span=[0, 22000]).pack()
+makeparam(cont_1, 'Duración', 'seg', 'duracion', dtype='double').pack()
+cont_2 = tk.Frame(botonera_params)
+cont_2.pack(pady=10)
+makeparam(cont_2, 'Frecuencia\nde sampleo', 'Hz', 'fs', span=[0,44200]).pack()
+makeparam(cont_2, 'Períodos', '  ', 'pers_shown', span=[1,10]).pack()
+tk.Button(master=cont_2, text='Reiniciar', command=p.reset_params, state=tk.DISABLED).pack(pady=10)
+tk.Checkbutton(cont_2, text='Mostrar discreta', 
+               variable=paramvar('show_discreto')).pack()
+
 
 #Play
 botonera_play = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
@@ -330,23 +429,28 @@ contenedor = tk.Frame(master=botonera_play)
 contenedor.pack(pady=5)
 
 tam = dict(height=1, width=1, padx=6)
-tk.Button(master=contenedor, text='⏵', command=p.play, **tam).grid(row=0, column=0, padx=2)
-tk.Button(master=contenedor, text='||', command=p.stop, **tam).grid(row=0, column=1, padx=2)
+play_button = tk.Button(master=contenedor, text='⏵', **tam)
+play_button.config(command=play(play_button))
+play_button.grid(row=0, column=0, padx=2)
+
+stop_button = tk.Button(master=contenedor, text='||', command=stop(play_button), **tam)
+stop_button.grid(row=0, column=1, padx=2)
+
 makeslider(contenedor, (0,100), 'Volumen', paramvar('volumen')).grid(row=1, columnspan=2)
 
 #Presets
 botonera_presets = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
 botonera_presets.pack(fill=tk.X, pady=10)
 
-tk.Button(master=botonera_presets, text='Random!', command=random).pack(fill=tk.X, pady=10)
-tk.Button(master=botonera_presets, text='Reset', command=p.reset).pack(fill=tk.X, pady=10)
+tk.Button(master=botonera_presets, text='¡Aleatorio!', command=random).pack(fill=tk.X, pady=10)
+tk.Button(master=botonera_presets, text='Reiniciar', command=p.reset_mode).pack(fill=tk.X, pady=10)
 
 tk.Label(master=botonera_presets, text='Modo:').pack(fill=tk.X)
 cb = ttk.Combobox(botonera_presets, state='readonly', values=list(modos.keys()), 
                   width=max([len(m) for m in modos.keys()]))
 cb.bind("<<ComboboxSelected>>", switcher)
 cb.pack(fill=tk.X)
-tk.Button(master=botonera_presets, text='Apply!', command=switcher).pack(fill=tk.X, pady=10)
+tk.Button(master=botonera_presets, text='Reaplicar', command=switcher).pack(fill=tk.X, pady=10)
 
 tk.Button(master=botonera, text='Guardar?', state=tk.DISABLED).pack(fill=tk.X, pady=10)
 
