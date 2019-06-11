@@ -455,5 +455,4 @@ tk.Button(master=botonera_presets, text='Reaplicar', command=switcher).pack(fill
 tk.Button(master=botonera, text='Guardar?', state=tk.DISABLED).pack(fill=tk.X, pady=10)
 
 
-
 root.mainloop()
