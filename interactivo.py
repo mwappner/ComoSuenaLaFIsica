@@ -49,10 +49,21 @@ class Plot(Figure):
         self.duracion  = duracion #segundos
         self.frec = frec #Hz
         self.volumen = volumen #en %
+        self._pers_shown = 1
 
         super().__init__(*a, **k)
         self.reset() #poner los valores iniciales
         self.init_plot() 
+
+    @property
+    def pers_shown(self):
+        return self._pers_shown
+    @pers_shown.setter
+    def pers_shown(self, value):
+        value = int(np.clip(value, 1, 10)) #entro 0 y 10
+        self._pers_shown = value
+        self.t = np.linspace(0, value, 800)
+        self.update()
 
     def init_plot(self):
         '''Inicializa la fig con los dos plots. Linquea la modificación de los 
@@ -100,7 +111,7 @@ class Plot(Figure):
     def curva(self):
         '''Gráfico de la curva de un período del sonido.'''
         ax = self.axes[1]
-        self.t = np.linspace(0, 1, 200)
+        self.t = np.linspace(0, self.pers_shown, 800)
         self.l = ax.plot(self.t, self.senos(self.t))[0] #el [0] para tomar la línea del plot
         ax.set_xticks([],[]) #sin ticks en los ejes
         ax.set_yticks([],[]) #sin ticks en los ejes
@@ -208,7 +219,7 @@ def ejemplo():
 
 modos = {'cuadrada':cuadrada,
          'triangular':triangular,
-         'diente de sierra':sawtooth,
+         'sawtooth':sawtooth,
          'violín':violin,
          'flauta':flauta,
          'trompeta':trompeta,
@@ -310,6 +321,7 @@ botonera_params.pack(fill=tk.X, pady=10)
 makeparam(botonera_params, 'Frecuencia', 'Hz', 'frec', span=[0, 22000]).pack()
 makeparam(botonera_params, 'Duración', 'seg', 'duracion', dtype='double').pack()
 makeparam(botonera_params, 'Frecuencia\nde sampleo', 'Hz', 'fs', span=[0,44200]).pack(pady=20)
+makeparam(botonera_params, 'Períodos', '', 'pers_shown', span=[1,10]).pack()
 
 #Play
 botonera_play = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
