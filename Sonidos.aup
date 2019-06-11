@@ -1,0 +1,73 @@
+<?xml version="1.0" standalone="no" ?>
+<!DOCTYPE project PUBLIC "-//audacityproject-1.3.0//DTD//EN" "http://audacity.sourceforge.net/xml/audacityproject-1.3.0.dtd" >
+<project xmlns="http://audacity.sourceforge.net/xml/" projname="Sonidos_data" version="1.3.0" audacityversion="2.1.2" sel0="11.4358276644" sel1="11.4358276644" vpos="304" h="3.0505215420" zoom="689.0625000000" rate="48000.0" snapto="off" selectionformat="hh:mm:ss + milliseconds" frequencyformat="Hz" bandwidthformat="octaves">
+	<tags/>
+	<wavetrack name="Flauta" channel="2" linked="0" mute="0" solo="0" height="150" minimized="0" isSelected="0" rate="48000" gain="1.0" pan="0.0">
+		<waveclip offset="0.00000000">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="407040">
+				<waveblock start="0">
+					<simpleblockfile filename="e000059a.au" len="262144" min="-0.059003" max="0.052045" rms="0.021499"/>
+				</waveblock>
+				<waveblock start="262144">
+					<simpleblockfile filename="e000060e.au" len="144896" min="-0.058199" max="0.051971" rms="0.019846"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+	<wavetrack name="Corno" channel="2" linked="0" mute="0" solo="0" height="150" minimized="0" isSelected="1" rate="48000" gain="1.0" pan="0.0">
+		<waveclip offset="0.00000000">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="444000">
+				<waveblock start="0">
+					<simpleblockfile filename="e0000d2a.au" len="262144" min="-0.046194" max="0.032595" rms="0.020809"/>
+				</waveblock>
+				<waveblock start="262144">
+					<simpleblockfile filename="e00003ee.au" len="181856" min="-0.05384" max="0.036896" rms="0.027904"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+	<wavetrack name="Violín" channel="2" linked="0" mute="0" solo="0" height="150" minimized="0" isSelected="0" rate="48000" gain="1.0" pan="0.0">
+		<waveclip offset="0.00000000">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="468960">
+				<waveblock start="0">
+					<simpleblockfile filename="e00002c9.au" len="262144" min="-0.034879" max="0.024995" rms="0.009084"/>
+				</waveblock>
+				<waveblock start="262144">
+					<simpleblockfile filename="e0000e42.au" len="206816" min="-0.035226" max="0.025164" rms="0.008361"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+	<wavetrack name="Organo" channel="2" linked="0" mute="0" solo="0" height="150" minimized="0" isSelected="0" rate="48000" gain="1.0" pan="0.0">
+		<waveclip offset="0.00000000">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="485760">
+				<waveblock start="0">
+					<simpleblockfile filename="e0000b5e.au" len="262144" min="-0.054534" max="0.04779" rms="0.01423"/>
+				</waveblock>
+				<waveblock start="262144">
+					<simpleblockfile filename="e0000e38.au" len="223616" min="-0.062179" max="0.055677" rms="0.017155"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+	<wavetrack name="Coro" channel="2" linked="0" mute="0" solo="1" height="150" minimized="0" isSelected="0" rate="48000" gain="1.0" pan="0.0">
+		<waveclip offset="0.00000000">
+			<sequence maxsamples="262144" sampleformat="262159" numsamples="536160">
+				<waveblock start="0">
+					<simpleblockfile filename="e00004dd.au" len="262144" min="-0.047371" max="0.042838" rms="0.013256"/>
+				</waveblock>
+				<waveblock start="262144">
+					<simpleblockfile filename="e0000176.au" len="262144" min="-0.030374" max="0.030805" rms="0.006983"/>
+				</waveblock>
+				<waveblock start="524288">
+					<simpleblockfile filename="e000032f.au" len="11872" min="-0.006387" max="0.005924" rms="0.001031"/>
+				</waveblock>
+			</sequence>
+			<envelope numpoints="0"/>
+		</waveclip>
+	</wavetrack>
+</project>
