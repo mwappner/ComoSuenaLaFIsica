@@ -23,16 +23,18 @@ from matplotlib.ticker import MaxNLocator
 
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 
 from itertools import chain
-from threading import Thread
 import simpleaudio as sa
 
-valores_que_cambian = {'fs':32000, #en Hz
+valores_que_cambian = {'fs':44100, #en Hz
                        'duracion':1, #en seg
                        'frec':150, #en Hz
                        'volumen':80 #en %
-                       }
+                       } #incluye los defauls
+defaults = dict(show_discreto='0', pers_shown=1, **valores_que_cambian)
+fs_permitidas = (8, 11.025, 16, 22.05, 32, 44.1, 48, 88.2, 96, 192) #kHz
 
 class Plot(Figure):
     
@@ -96,6 +98,7 @@ class Plot(Figure):
         self.update()
         
     def _make_t_discreto(self):
+        '''Crea el vector de tiempo para la onda discreta.'''
         puntos = round(self.pers_shown * self.fs / self.frec)
         if puntos>=800:
             return self.t #no más puntos que t
@@ -236,6 +239,9 @@ class Plot(Figure):
 ###### Defino modos preseteados#######
 #=====================================
 
+def no_implementado():
+    messagebox.showinfo(title='No implementado', message='Regrese más tarde')
+
 def random():
     func = lambda i: np.random.randint(0,100)
     p.set_mode(func, func)
@@ -270,16 +276,16 @@ def triangular():
     p.set_mode(amplis_func, fases_func)
 
 def sawtooth():
-    pass
+    no_implementado()
 
 def violin():
-    pass
+    no_implementado()
 
 def flauta():
-    pass
+    no_implementado()
 
 def trompeta():
-    pass
+    no_implementado()
 
 def ejemplo():
     amplitudes = [100, 90, 45, 32, 55, 32, 57, 31, 11, 34, 12, 56, 89]
@@ -333,6 +339,9 @@ def makeone(master, name, ind):
 
 
 def paramvar(paramname, dtype='int', default=0):
+    '''Crea una tk.Variable y la asocia al atributo de Plot dado en paramname.
+    El tipo de variable será el de dtype. La variable está inicializada en el
+    valor actual del atributo correspondiente.'''
     if dtype=='int':
         var = tk.IntVar()
     elif dtype=='double':
@@ -351,34 +360,41 @@ def paramvar(paramname, dtype='int', default=0):
     return var
     
 
-def makeparam(master, name, unit, paramname, span=[0,100], dtype='int'):
+def makeparam(master, name, unit, variable, span=[0,100]):
+    '''Crea un spinbox para la variable dada, le pone nombre y unidades.'''
     frame = tk.Frame(master=master)
     tk.Label(master=frame, text=name).grid(columnspan=2)
-    tk.Spinbox(master=frame,
-               textvariable=paramvar(paramname, dtype, default=span[0]),
+    tk.Spinbox(master=frame, textvariable=variable,
                from_=span[0], to=span[1], width=6).grid(row=1, column=0)
     tk.Label(master=frame, text=unit).grid(row=1, column=1)
     return frame
 
 def play(boton):
-    def inner():
-        boton.config(relief=tk.SUNKEN, state=tk.DISABLED)
+    '''Desactiva el botón, lo matiene apretado y reproduce el sonido.'''
+    boton.config(relief=tk.SUNKEN, state=tk.DISABLED)
+    try:
         p.play()
-        p.player_after_id = boton.after(int(p.duracion * 1000), levantar(boton))
-    return inner
+    except ValueError:
+        msg = ('Para reproducción del sonido, la frecuencia de sampleo debe ser una '
+               'de las siguientes, en kHz: \n{}').format(str(fs_permitidas)[1:-1])
+               
+        messagebox.showwarning(title='Frecuencia inválida', message=msg)
+    p.player_after_id = boton.after(int(p.duracion * 1000), lambda:levantar(boton))
 
 def levantar(boton):
-    def inner():
-        boton.config(relief=tk.RAISED, state='normal')
-    return inner
+    '''Devuelve el botón al estado desclickeado y activo.'''
+    boton.config(relief=tk.RAISED, state='normal')
 
 def stop(boton):
-    def inner():
-        p.stop()
-        levantar(boton)()
-        if hasattr(p, 'player_after_id'):
-            boton.after_cancel(p.player_after_id)
-    return inner
+    '''Cancela la reproducción dle sonido y rehabilita el botón.'''
+    p.stop()
+    levantar(boton)
+    if hasattr(p, 'player_after_id'):
+        boton.after_cancel(p.player_after_id)
+
+def reset_params(variables_dictionary):
+    for k, val in variables_dictionary.items():
+        val.set(defaults[k])
 
 #=============================
 ###### Creo la interfaz#######
@@ -389,7 +405,7 @@ root = tk.Tk()
 #root.geometry('350x200')
 
 #Variables que van a tener las funciones y que los botones modifican
-cant = 10 #cuántos armónicos uso?
+cant = 13 #cuántos armónicos uso?
 vars_amp = [tk.DoubleVar() for _ in range(cant)]
 vars_fas = [tk.DoubleVar() for _ in range(cant)]
 
@@ -406,53 +422,73 @@ for i, n in enumerate(nombres):
 botonera = tk.Frame(master=root)
 botonera.grid(row=0, column=cant+1, rowspan=2, padx=10)
 
-#Parámetros
+###Parámetros###
+# La caja externa y las dos internas
 botonera_params = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
 botonera_params.pack(fill=tk.X, pady=10)
 cont_1 = tk.Frame(botonera_params)
 cont_1.pack(pady=10)
-makeparam(cont_1, 'Frecuencia', 'Hz', 'frec', span=[0, 22000]).pack()
-makeparam(cont_1, 'Duración', 'seg', 'duracion', dtype='double').pack()
 cont_2 = tk.Frame(botonera_params)
 cont_2.pack(pady=10)
-makeparam(cont_2, 'Frecuencia\nde sampleo', 'Hz', 'fs', span=[0,44200]).pack()
-makeparam(cont_2, 'Períodos', '  ', 'pers_shown', span=[1,10]).pack()
-tk.Button(master=cont_2, text='Reiniciar', command=p.reset_params, state=tk.DISABLED).pack(pady=10)
-tk.Checkbutton(cont_2, text='Mostrar discreta', 
-               variable=paramvar('show_discreto')).pack()
 
+# Variables
+nombres = ['frec', 'fs', 'pers_shown', 'show_discreto']
+var_dict = {k:paramvar(k, default=defaults[k]) for k in nombres}
+var_dict['duracion'] = paramvar('duracion', default=defaults['duracion'], dtype='double')
 
-#Play
+makeparam(cont_1, 'Frecuencia', 'Hz', var_dict['frec'], span=[0, 22000]).pack()
+makeparam(cont_1, 'Duración', 'seg', var_dict['duracion'], span=[0,20]).pack()
+
+makeparam(cont_2, 'Frecuencia\nde sampleo', 'Hz', var_dict['fs'], span=[0,44200]).pack()
+makeparam(cont_2, 'Períodos', '  ', var_dict['pers_shown'], span=[1,10]).pack()
+
+tk.Button(master=cont_2, text='Reiniciar', 
+          command= lambda : reset_params(var_dict)).pack(pady=10)
+tk.Checkbutton(cont_2, text='Mostrar discreta', variable=var_dict['show_discreto']).pack()
+
+###Play###
+# La caja externa
 botonera_play = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
 botonera_play.pack(fill=tk.X, pady=10)
 contenedor = tk.Frame(master=botonera_play)
 contenedor.pack(pady=5)
 
-tam = dict(height=1, width=1, padx=6)
+# Botón de play
+tam = dict(height=1, width=1, padx=6) #parámetros de los botones
 play_button = tk.Button(master=contenedor, text='⏵', **tam)
-play_button.config(command=play(play_button))
+play_button.config(command=lambda:play(play_button))
 play_button.grid(row=0, column=0, padx=2)
 
-stop_button = tk.Button(master=contenedor, text='||', command=stop(play_button), **tam)
+# Botón de stop
+stop_button = tk.Button(master=contenedor, text='||', command=lambda:stop(play_button), **tam)
 stop_button.grid(row=0, column=1, padx=2)
 
+# Volúmen
 makeslider(contenedor, (0,100), 'Volumen', paramvar('volumen')).grid(row=1, columnspan=2)
 
-#Presets
+###Presets###
+# La caja externa
 botonera_presets = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
 botonera_presets.pack(fill=tk.X, pady=10)
 
-tk.Button(master=botonera_presets, text='¡Aleatorio!', command=random).pack(fill=tk.X, pady=10)
-tk.Button(master=botonera_presets, text='Reiniciar', command=p.reset_mode).pack(fill=tk.X, pady=10)
+formato = dict(fill=tk.X, pady=10)
 
+# Botones de aleatorio y reinicio
+tk.Button(master=botonera_presets, text='¡Aleatorio!', command=random).pack(**formato)
+tk.Button(master=botonera_presets, text='Reiniciar', command=p.reset_mode).pack(**formato)
+
+#Menu de opciones
 tk.Label(master=botonera_presets, text='Modo:').pack(fill=tk.X)
 cb = ttk.Combobox(botonera_presets, state='readonly', values=list(modos.keys()), 
                   width=max([len(m) for m in modos.keys()]))
 cb.bind("<<ComboboxSelected>>", switcher)
 cb.pack(fill=tk.X)
-tk.Button(master=botonera_presets, text='Reaplicar', command=switcher).pack(fill=tk.X, pady=10)
 
-tk.Button(master=botonera, text='Guardar?', state=tk.DISABLED).pack(fill=tk.X, pady=10)
+#Botón de aplicar el modo seleccionado
+tk.Button(master=botonera_presets, text='Reaplicar', command=switcher).pack(**formato)
+
+###Guardar###
+tk.Button(master=botonera, text='Guardar?', state=tk.DISABLED).pack(**formato)
 
 
 root.mainloop()
