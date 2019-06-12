@@ -61,6 +61,14 @@ class Plot(Figure):
         self.init_plot() 
 
     @property
+    def frec(self):
+        return self._frec
+    @frec.setter
+    def frec(self, value):
+        self._frec = value
+        self.update_label()
+
+    @property
     def show_discreto(self):
         return self._show_discreto
     @show_discreto.setter
@@ -158,7 +166,14 @@ class Plot(Figure):
         
 #        ax.set_xticks([],[]) #sin ticks en los ejes
         ax.set_yticks([],[]) #sin ticks en los ejes
-        ax.set_xlabel('Período [aprox. {}ms]'.format(1000/self.fs))
+        self.update_label()
+        
+    def update_label(self):
+        try:
+            self.axes[1].set_xlabel('Período [aprox. {:.2f}ms]'.format(
+                    1000 * self.pers_shown/self.frec))
+        except AttributeError:
+            pass
         
     def update(self, *a): #mejorar tomando índice cambiado (acelerar)
         '''Actualizo gráficos.'''
@@ -168,6 +183,7 @@ class Plot(Figure):
                 b.set_height(v.get())
             #Los senos:
             self.l.set_ydata(self.senos(self.t))
+            self.update_label()
             if self.show_discreto: #solo actualizo si la estoy mostrando
                 if self.changed: #si cambiaron fs o frec, grafico de cero
                     self._make_discreta()
