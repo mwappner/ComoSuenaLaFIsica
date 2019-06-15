@@ -239,7 +239,7 @@ class Plot(Figure):
         iterable (no un generador!), o un callable que cree los nuevos valores.'''
         if callable(new):
             for i, o in enumerate(old):
-                o.set(new(i))
+                o.set(new(i+1))
         else:
             if len(old)>len(new):
                 new += [0] * (len(old)-len(new))
@@ -263,21 +263,19 @@ def random():
     p.set_mode(func, func)
 
 def unosobreene():
-    amplis_func = lambda i: 100/(1+i) #amplitud máxima es 100, arranca en i=0
+    amplis_func = lambda i: 100/i #amplitud máxima es 100, arranca en i=0
     p.set_mode(amplis_func) #como todas las fases son 0, no ahce falta pasarlo
 
 def cuadrada():
     def amplis_func(i):
-        i += 1 #OJO! El programa arranca en i=0, pero la serie armónica en i=1
         if i%2: #sólo los impares
-            return 100/(i) #amplitud máxima es 100...
+            return 100/i #amplitud máxima es 100...
         else:
             return 0
     p.set_mode(amplis_func)
 
 def triangular():
     def amplis_func(i):
-        i += 1 #OJO! El programa arranca en i=0, pero la serie armónica en i=1
         if i%2: #sólo los impares
             return 100/(i**2) #amplitud máxima es 100...
         else:
@@ -308,14 +306,21 @@ def ejemplo():
     fases = [0, 10, 25, 35, 100, 10]
     p.set_mode(amplitudes, fases)
 
-modos = {'cuadrada':cuadrada,
+def nada():
+    pass
+
+modos = {'Elija uno':nada,
+         'cuadrada':cuadrada,
          'triangular':triangular,
          'sawtooth':sawtooth,
+         '1/n':unosobreene,
          'violín':violin,
          'flauta':flauta,
          'trompeta':trompeta,
-         '1/n':unosobreene,
-         'ejemplo':ejemplo}
+         'ejemplo':ejemplo
+         }
+
+nuevos_modos = {}
 
 def switcher(*a):
     modos[cb.get()]()
@@ -385,6 +390,7 @@ def makeparam(master, name, unit, variable, span=[0,100]):
     tk.Label(master=frame, text=unit).grid(row=1, column=1)
     return frame
 
+
 def play(boton):
     '''Desactiva el botón, lo matiene apretado y reproduce el sonido.'''
     boton.config(relief=tk.SUNKEN, state=tk.DISABLED)
@@ -397,9 +403,11 @@ def play(boton):
         messagebox.showwarning(title='Frecuencia inválida', message=msg)
     p.player_after_id = boton.after(int(p.duracion * 1000), lambda:levantar(boton))
 
+
 def levantar(boton):
     '''Devuelve el botón al estado desclickeado y activo.'''
     boton.config(relief=tk.RAISED, state='normal')
+
 
 def stop(boton):
     '''Cancela la reproducción dle sonido y rehabilita el botón.'''
@@ -408,9 +416,51 @@ def stop(boton):
     if hasattr(p, 'player_after_id'):
         boton.after_cancel(p.player_after_id)
 
+
 def reset_params(variables_dictionary):
     for k, val in variables_dictionary.items():
         val.set(defaults[k])
+
+
+def get_vals(name):
+    return [int(v.get()) for v in getattr(p, name)]
+
+
+
+def agregar(entry_wdgt):
+    nuevo = entry_wdgt.get()
+    if nuevo == '':
+        messagebox.showwarning(title='Nombre faltante', message='Indique un nombre en el campo adecuado')
+        return
+
+    amps = get_vals('amplis')
+    fas = get_vals('fases')
+
+    nuevos_modos[nuevo] = (amps, fas)
+    
+    def setter(name):
+        p.set_mode(*nuevos_modos[name])
+
+    modos[nuevo] = lambda: setter(nuevo)
+
+    cb['values'] = list(modos.keys())
+
+
+def borrar():
+    global modos
+    global nuevos_modos
+    
+    nombre = cb.get()
+    if nombre in nuevos_modos:
+        cb.set('Elija uno')
+        del modos[nombre]
+        del nuevos_modos[nombre]
+        cb['values'] = list(modos.keys())
+    else:
+        messagebox.showwarning(title='No permitido', message='Sólo puede eliminar opciones personalizadas no las preexistentes.')
+    # print(nuevos_modos)
+    # print(modos.keys())
+
 
 #=============================
 ###### Creo la interfaz#######
@@ -421,7 +471,7 @@ root = tk.Tk()
 #root.geometry('350x200')
 
 #Variables que van a tener las funciones y que los botones modifican
-cant = 13 #cuántos armónicos uso?
+cant = 11 #cuántos armónicos uso?
 vars_amp = [tk.DoubleVar() for _ in range(cant)]
 vars_fas = [tk.DoubleVar() for _ in range(cant)]
 
@@ -494,17 +544,25 @@ tk.Button(master=botonera_presets, text='¡Aleatorio!', command=random).pack(**f
 tk.Button(master=botonera_presets, text='Reiniciar', command=p.reset_mode).pack(**formato)
 
 #Menu de opciones
-tk.Label(master=botonera_presets, text='Modo:').pack(fill=tk.X)
+tk.Label(master=botonera_presets, text='Presets:').pack(fill=tk.X)
 cb = ttk.Combobox(botonera_presets, state='readonly', values=list(modos.keys()), 
                   width=max([len(m) for m in modos.keys()]))
 cb.bind("<<ComboboxSelected>>", switcher)
+cb.set('Elija uno')
 cb.pack(fill=tk.X)
 
 #Botón de aplicar el modo seleccionado
+tk.Button(master=botonera_presets, text='Borrar', command=borrar).pack(**formato)
 tk.Button(master=botonera_presets, text='Reaplicar', command=switcher).pack(**formato)
 
+tk.Label(master=botonera_presets, text='Nombre:').pack(fill=tk.X)
+e = tk.Entry(master=botonera_presets)
+e.pack(fill=tk.X)
+tk.Button(master=botonera_presets, text='Agregar', command=lambda: agregar(e)).pack(**formato)
+
+
 ###Guardar###
-tk.Button(master=botonera, text='Guardar?', state=tk.DISABLED).pack(**formato)
+# tk.Button(master=botonera, text='Guardar?', state=tk.DISABLED).pack(**formato)
 
 
 root.mainloop()
