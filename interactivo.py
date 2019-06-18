@@ -30,7 +30,7 @@ import simpleaudio as sa
 
 valores_que_cambian = {'fs':44100, #en Hz
                        'duracion':1, #en seg
-                       'frec':150, #en Hz
+                       'frec':500, #en Hz
                        'volumen':80 #en %
                        } #incluye los defauls
 defaults = dict(show_discreto='0', pers_shown=1, **valores_que_cambian)
@@ -363,14 +363,16 @@ def makeone(master, name, ind):
     toolbar = tk.Frame(master=master)
     
     titulo = tk.Frame(master=toolbar, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
+    titulo.pack(fill=tk.X)
     tk.Label(master=titulo, text=name).pack(fill=tk.X)
     
-    botones = tk.Frame(master=toolbar, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
-    makeslider(botones, (0,100), 'Ampli', vars_amp[ind]).pack(fill=tk.X)
-    makeslider(botones, (0,360), 'Fase', vars_fas[ind]).pack(fill=tk.X)
+    # botones = tk.Frame(master=toolbar, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
+    makeslider(toolbar, (0,100), 'Ampli', vars_amp[ind]).pack(fill=tk.X)
+    fa = makeslider(toolbar.master, (0,360), 'Fase', vars_fas[ind])
+    fa.config(relief=tk.RIDGE)
+    fases_list.append(fa)
     
-    titulo.pack(fill=tk.X)
-    botones.pack(fill=tk.X)
+    # botones.pack(fill=tk.X)
     return toolbar
 
 
@@ -459,7 +461,7 @@ def agregar(entry_wdgt):
     if not p.personalizado_init:
         modos['Personalizados'] = nada
         p.personalizado_init = True
-        
+
     modos[nuevo] = lambda: setter(nuevo)
 
     cb['values'] = list(modos.keys())
@@ -477,9 +479,16 @@ def borrar():
         cb['values'] = list(modos.keys())
     else:
         messagebox.showwarning(title='No permitido', message='Sólo puede eliminar opciones personalizadas no las preexistentes.')
-    # print(nuevos_modos)
-    # print(modos.keys())
 
+
+def mostrar_fases():
+    if show_fases.get():
+        for i, f in enumerate(fases_list):
+            f.grid(row=2, column=i, sticky='we')
+    else:
+        print(show_fases.get())
+        for f in fases_list:
+            f.grid_remove()
 
 #=============================
 ###### Creo la interfaz#######
@@ -490,7 +499,7 @@ root = tk.Tk()
 #root.geometry('350x200')
 
 #Variables que van a tener las funciones y que los botones modifican
-cant = 11 #cuántos armónicos uso?
+cant = 21 #cuántos armónicos uso?
 vars_amp = [tk.DoubleVar() for _ in range(cant)]
 vars_fas = [tk.DoubleVar() for _ in range(cant)]
 
@@ -499,7 +508,8 @@ p = Plot(vars_amp, vars_fas)
 p.put_canvas(root, 'grid', row=0, column=0, columnspan=cant, sticky='ew')
 
 #Hago botoneras de armónicos
-nombres = ['Modo {}'.format(i) for i in range(cant)]
+nombres = ['Modo {}'.format(i+1) for i in range(cant)]
+fases_list = []
 for i, n in enumerate(nombres):
     makeone(root, n, i).grid(row=1, column=i)
 
@@ -510,7 +520,7 @@ botonera.grid(row=0, column=cant+1, rowspan=2, padx=10)
 ###Parámetros###
 # La caja externa y las dos internas
 botonera_params = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
-botonera_params.pack(fill=tk.X, pady=10)
+botonera_params.grid(row=0, column=0, sticky='we')
 cont_1 = tk.Frame(botonera_params)
 cont_1.pack(pady=10)
 cont_2 = tk.Frame(botonera_params)
@@ -533,8 +543,8 @@ tk.Checkbutton(cont_2, text='Mostrar discreta', variable=var_dict['show_discreto
 
 ###Play###
 # La caja externa
-botonera_play = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
-botonera_play.pack(fill=tk.X, pady=10)
+botonera_play = tk.Frame(master=botonera, padx=3, pady=2, borderwidth=1)
+botonera_play.grid(row=1, column=1, rowspan=2)
 contenedor = tk.Frame(master=botonera_play)
 contenedor.pack(pady=5)
 
@@ -554,7 +564,7 @@ makeslider(contenedor, (0,100), 'Volumen', paramvar('volumen')).grid(row=1, colu
 ###Presets###
 # La caja externa
 botonera_presets = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
-botonera_presets.pack(fill=tk.X, pady=10)
+botonera_presets.grid(column=0, row=1, sticky='we')
 
 formato = dict(fill=tk.X, pady=10)
 
@@ -579,6 +589,8 @@ e = tk.Entry(master=botonera_presets)
 e.pack(fill=tk.X)
 tk.Button(master=botonera_presets, text='Agregar', command=lambda: agregar(e)).pack(**formato)
 
+show_fases = tk.IntVar()
+tk.Checkbutton(master=botonera_presets, text='Mostrar fases', variable=show_fases, command=mostrar_fases).pack()
 
 ###Guardar###
 # tk.Button(master=botonera, text='Guardar?', state=tk.DISABLED).pack(**formato)
