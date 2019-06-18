@@ -60,6 +60,8 @@ class Plot(Figure):
         self.reset_mode() #poner los valores iniciales
         self.init_plot() 
 
+        self.personalizado_init = False
+
     @property
     def frec(self):
         return self._frec
@@ -439,7 +441,6 @@ def get_vals(name):
     return [int(v.get()) for v in getattr(p, name)]
 
 
-
 def agregar(entry_wdgt):
     nuevo = entry_wdgt.get()
     if nuevo == '':
@@ -449,11 +450,16 @@ def agregar(entry_wdgt):
     amps = get_vals('amplis')
     fas = get_vals('fases')
 
+    nuevo = '   ' + nuevo
     nuevos_modos[nuevo] = (amps, fas)
     
     def setter(name):
         p.set_mode(*nuevos_modos[name])
 
+    if not p.personalizado_init:
+        modos['Personalizados'] = nada
+        p.personalizado_init = True
+        
     modos[nuevo] = lambda: setter(nuevo)
 
     cb['values'] = list(modos.keys())
