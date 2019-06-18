@@ -221,9 +221,16 @@ class Plot(Figure):
     def create_sound(self):
         '''Crea el sonido a reproducir, sólo si hubo cambios desde la última vez.'''
         if self.changed:
-            tiempo = np.linspace(0, self.duracion, self.duracion * self.fs, endpoint=False)            
+            tiempo = np.linspace(0, self.duracion, self.duracion * self.fs, endpoint=False)
+
+            # Una envolvernte para que arranque y termine con 0.05 segundos de control de volumen
+            seno_env = np.sin(np.linspace(-np.pi/2, np.pi/2, 0.05 * self.fs)) * .5
+            envolvente = np.concatenate((.5 + seno_env, np.ones(len(tiempo)-2*len(seno_env)), .5-seno_env))      
+            
             self.sound = self.volumen/100 * (2**15-1) * self.senos(tiempo, self.frec)
+            self.sound *= envolvente
             self.sound = self.sound.astype(np.int16)
+
             self.changed = False
         return self.sound
     
