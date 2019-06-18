@@ -262,10 +262,6 @@ def random():
     func = lambda i: np.random.randint(0,100)
     p.set_mode(func, func)
 
-def unosobreene():
-    amplis_func = lambda i: 100/i #amplitud máxima es 100, arranca en i=0
-    p.set_mode(amplis_func) #como todas las fases son 0, no ahce falta pasarlo
-
 def cuadrada():
     def amplis_func(i):
         if i%2: #sólo los impares
@@ -290,34 +286,44 @@ def triangular():
     p.set_mode(amplis_func, fases_func)
 
 def sawtooth():
-    no_implementado()
+    def amplis_func(i):
+        return 100/i
+        
+    def fases_func(i):
+        i += 1
+        if not i%2: #los de índice 3, 7, 11, 15, ...
+            return 180
+        else:
+            return 0
+    p.set_mode(amplis_func, fases_func)
 
 def violin():
-    no_implementado()
+    amps = [100, 83, 45, 23, 6, 25, 27, 6, 2, 2, 2, 2, 2, 2, 1, 1, 1, 0, 0, 0, 0]
+    p.set_mode(amps)
 
 def flauta():
-    no_implementado()
+    amps = [100, 19, 7, 10, 3, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    p.set_mode(amps)
 
-def trompeta():
-    no_implementado()
+def corno():
+    amps = [100, 16, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    p.set_mode(amps)
 
-def ejemplo():
-    amplitudes = [100, 90, 45, 32, 55, 32, 57, 31, 11, 34, 12, 56, 89]
-    fases = [0, 10, 25, 35, 100, 10]
-    p.set_mode(amplitudes, fases)
+def organo():
+    amps = [85, 69, 62, 20, 2, 25, 1, 100, 13, 3, 0, 67, 0, 0, 1, 25, 0, 6, 0, 2, 1]
+    p.set_mode(amps)
 
 def nada():
     pass
 
 modos = {'Elija uno':nada,
-         'cuadrada':cuadrada,
-         'triangular':triangular,
-         'sawtooth':sawtooth,
-         '1/n':unosobreene,
-         'violín':violin,
-         'flauta':flauta,
-         'trompeta':trompeta,
-         'ejemplo':ejemplo
+         '  Cuadrada':cuadrada,
+         '  Triangular':triangular,
+         '  Sawtooth':sawtooth,
+         '  Violín':violin,
+         '  Flauta':flauta,
+         '  Corno':corno,
+         '  Órgano':organo
          }
 
 nuevos_modos = {}
