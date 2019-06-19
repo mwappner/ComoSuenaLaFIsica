@@ -322,6 +322,18 @@ def organo():
     amps = [85, 69, 62, 20, 2, 25, 1, 100, 13, 3, 0, 67, 0, 0, 1, 25, 0, 6, 0, 2, 1]
     p.set_mode(amps)
 
+def voces_i1():
+    amps = [100.0, 37.5, 3.9, 1.9, 2.2, 3.6, 11.3, 9.8, 16.3, 10.4, 5.6, 5.9, 3.6, 2.5, 3.5, 3.3, 2.7, 0.8, 0.8, 0.4]
+    p.set_mode(amps)
+
+def voces_i2():
+    amps = [100.0, 28.5, 6.9, 4.4, 1.8, 4.6, 4.7, 4.9, 16.0, 11.9, 5.9, 5.7, 5.5, 4.8, 6.6, 2.1, 1.7, 0.7, 0.5, 0.6]
+    p.set_mode(amps)
+
+def voces_a():
+    amps = [76.5, 90.0, 100.0, 68.7, 28.1, 19.2, 4.2, 2.0, 2.2, 5.1, 8.5, 9.5, 5.3, 3.5, 4.4, 3.9, 2.4, 0.8, 0.5, 0.8]
+    p.set_mode(amps)
+
 def nada():
     pass
 
@@ -332,7 +344,10 @@ modos = {'Elija uno':nada,
          '  Violín':violin,
          '  Flauta':flauta,
          '  Corno':corno,
-         '  Órgano':organo
+         '  Órgano':organo,
+         '  Voces: "a"':voces_a,
+         '  Voces: "i"':voces_i1,
+         '  Voces "i"_2':voces_i2,
          }
 
 nuevos_modos = {}
