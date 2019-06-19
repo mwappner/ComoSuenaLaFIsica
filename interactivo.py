@@ -544,7 +544,7 @@ tk.Checkbutton(cont_2, text='Mostrar discreta', variable=var_dict['show_discreto
 ###Play###
 # La caja externa
 botonera_play = tk.Frame(master=botonera, padx=3, pady=2, borderwidth=1)
-botonera_play.grid(row=1, column=1, rowspan=2)
+botonera_play.grid(row=0, column=1, rowspan=2)
 contenedor = tk.Frame(master=botonera_play)
 contenedor.pack(pady=5)
 
