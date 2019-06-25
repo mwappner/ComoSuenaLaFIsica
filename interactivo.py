@@ -28,14 +28,17 @@ from tkinter import messagebox
 from itertools import chain
 import simpleaudio as sa
 
+cant = 17 #cuántos armónicos uso?
+
 valores_que_cambian = {'fs':44100, #en Hz
                        'duracion':1, #en seg
                        'frec':500, #en Hz
                        'volumen':80, #en %
-                       'cant_arm':100
+                       'cant_arm':cant
                        } #incluye los defauls
 defaults = dict(show_discreto='0', pers_shown=1, **valores_que_cambian)
 fs_permitidas = (8, 11.025, 16, 22.05, 32, 44.1, 48, 88.2, 96, 192) #kHz
+
 
 class Plot(Figure):
     
@@ -72,6 +75,19 @@ class Plot(Figure):
         self.update_label()
 
     @property
+    def cant_arm(self):
+        return self._cant_arm
+    @cant_arm.setter
+    def cant_arm(self, value):
+        self._cant_arm = value
+        self.update()
+
+    def _make_cant_arm_shower(self):
+        x = [self.cant_arm - .5] *2
+        self.linea_cant_arm = self.axes[0].plot(x, [0, 105], '--', color='gray')[0]
+        self.linea_cant_arm.set_visible(self.cant_arm<defaults['cant_arm'])
+
+    @property
     def show_discreto(self):
         return self._show_discreto
     @show_discreto.setter
@@ -95,6 +111,15 @@ class Plot(Figure):
                                  '--', color='C1')[0]
         self.discreta.set_visible(self.show_discreto)
 
+    def _make_t_discreto(self):
+        '''Crea el vector de tiempo para la onda discreta.'''
+        puntos = round(self.pers_shown * self.fs / self.frec)
+        if puntos>=800:
+            return self.t #no más puntos que t
+        else:
+            puntos = max(puntos, 2)
+            return np.linspace(0, self.pers_shown, puntos)
+
     @property
     def pers_shown(self):
         return self._pers_shown
@@ -107,15 +132,6 @@ class Plot(Figure):
         self.t_discreto = self._make_t_discreto()
         
         self.update()
-        
-    def _make_t_discreto(self):
-        '''Crea el vector de tiempo para la onda discreta.'''
-        puntos = round(self.pers_shown * self.fs / self.frec)
-        if puntos>=800:
-            return self.t #no más puntos que t
-        else:
-            puntos = max(puntos, 2)
-            return np.linspace(0, self.pers_shown, puntos)
 
     def init_plot(self):
         '''Inicializa la fig con los dos plots. Linquea la modificación de los 
@@ -146,6 +162,7 @@ class Plot(Figure):
         x = list(range(len(self.amplis)))
         y = [v.get() for v in self.amplis]
         self.bars = ax.bar(x,y)
+        self._make_cant_arm_shower()
         ax.set_xlabel('# Armónico')
         ax.set_ylabel('Amplitud [u.a.]')
         ax.set_ylim(0,105)
@@ -154,7 +171,8 @@ class Plot(Figure):
     def senos(self, t, frec=1):
         '''Genero la suma de senos normalizada.'''
         senito = lambda amp, fas, i: amp * np.sin(np.pi * 2 * (i+1) * t * frec + fas * 2 * np.pi / 360)
-        senos = sum([senito(a.get(), f.get(), i) for i, (a,f) in enumerate(zip(self.amplis, self.fases))])
+        senos = sum([senito(a.get(), f.get(), i) for i, (a,f,_) in enumerate(zip(
+            self.amplis, self.fases, range(self.cant_arm)))])
         if np.abs(senos).max==0:
             return np.zeros(senos.shape)
         else:
@@ -180,10 +198,16 @@ class Plot(Figure):
         
     def update(self, *a): #mejorar tomando índice cambiado (acelerar)
         '''Actualizo gráficos.'''
-        #Las barras:
+
         try: 
-            for b, v in zip(self.bars, self.amplis):
+            #Las barras:
+            for i, (b, v) in enumerate(zip(self.bars, self.amplis)):
                 b.set_height(v.get())
+                color = 'gray' if i > self.cant_arm-1 else 'C0'
+                b.set_color(color)
+            self.linea_cant_arm.set_xdata([self.cant_arm - .5]*2)
+            self.linea_cant_arm.set_visible(self.cant_arm<defaults['cant_arm'])
+
             #Los senos:
             self.l.set_ydata(self.senos(self.t))
             self.update_label()
@@ -192,10 +216,11 @@ class Plot(Figure):
                     self._make_discreta()
                 else:
                     self.discreta.set_ydata(self.senos(self.t_discreto))
+
             #Muestro lo nuevo
             self.my_canvas.draw()
             self.changed = True
-        except AttributeError:
+        except AttributeError: #por si hay cosas no inicializadas
             pass
         
     def reset_mode(self):
@@ -220,7 +245,6 @@ class Plot(Figure):
         
         self.update()
 
-        
     def create_sound(self):
         '''Crea el sonido a reproducir, sólo si hubo cambios desde la última vez.'''
         if self.changed:
@@ -271,8 +295,7 @@ def no_implementado():
     messagebox.showinfo(title='No implementado', message='Regrese más tarde')
 
 def random():
-    func = lambda i: np.random.randint(0,100)
-    p.set_mode(func, func)
+    p.set_mode(lambda i: np.random.randint(0,100))
 
 def cuadrada():
     def amplis_func(i):
@@ -290,7 +313,6 @@ def triangular():
             return 0
         
     def fases_func(i):
-        i += 1
         if not (i+1)/2%2: #los de índice 3, 7, 11, 15, ...
             return 180
         else:
@@ -526,7 +548,6 @@ root = tk.Tk()
 #root.geometry('350x200')
 
 #Variables que van a tener las funciones y que los botones modifican
-cant = 17 #cuántos armónicos uso?
 vars_amp = [tk.DoubleVar() for _ in range(cant)]
 vars_fas = [tk.DoubleVar() for _ in range(cant)]
 
