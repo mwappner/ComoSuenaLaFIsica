@@ -31,7 +31,8 @@ import simpleaudio as sa
 valores_que_cambian = {'fs':44100, #en Hz
                        'duracion':1, #en seg
                        'frec':500, #en Hz
-                       'volumen':80 #en %
+                       'volumen':80, #en %
+                       'cant_arm':100
                        } #incluye los defauls
 defaults = dict(show_discreto='0', pers_shown=1, **valores_que_cambian)
 fs_permitidas = (8, 11.025, 16, 22.05, 32, 44.1, 48, 88.2, 96, 192) #kHz
@@ -257,7 +258,9 @@ class Plot(Figure):
     
     def set_mode(self, amplitudes, fases=[]):
         self.call_or_place(amplitudes, self.amplis)
-        self.call_or_place(fases, self.fases)
+        if fases:#sólo las corre si hace falta
+        	self.call_or_place(fases, self.fases)
+
 
 
 #=====================================
@@ -423,6 +426,15 @@ def makeparam(master, name, unit, variable, span=[0,100]):
     return frame
 
 
+def makeval(master, name, variable, span=[0,100]):
+    '''Crea un spinbox para la variable dada, le pone nombre y unidades.'''
+    frame = tk.Frame(master=master)
+    tk.Label(master=frame, text=name).pack(side=tk.LEFT, padx=3)
+    tk.Spinbox(master=frame, textvariable=variable,
+               from_=span[0], to=span[1], width=2).pack(side=tk.LEFT, padx=3)
+    return frame
+
+
 def play(boton):
     '''Desactiva el botón, lo matiene apretado y reproduce el sonido.'''
     boton.config(relief=tk.SUNKEN, state=tk.DISABLED)
@@ -514,7 +526,7 @@ root = tk.Tk()
 #root.geometry('350x200')
 
 #Variables que van a tener las funciones y que los botones modifican
-cant = 21 #cuántos armónicos uso?
+cant = 17 #cuántos armónicos uso?
 vars_amp = [tk.DoubleVar() for _ in range(cant)]
 vars_fas = [tk.DoubleVar() for _ in range(cant)]
 
@@ -536,25 +548,27 @@ botonera.grid(row=0, column=cant+1, rowspan=2, padx=10)
 # La caja externa y las dos internas
 botonera_params = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
 botonera_params.grid(row=0, column=0, sticky='we')
-cont_1 = tk.Frame(botonera_params)
-cont_1.pack(pady=10)
-cont_2 = tk.Frame(botonera_params)
-cont_2.pack(pady=10)
+# cont_1 = tk.Frame(botonera_params)
+# cont_1.pack(pady=10)
+# cont_2 = tk.Frame(botonera_params)
+# cont_2.pack(pady=10)
 
 # Variables
-nombres = ['frec', 'fs', 'pers_shown', 'show_discreto']
+nombres = ['frec', 'fs', 'pers_shown', 'show_discreto', 'cant_arm']
 var_dict = {k:paramvar(k, default=defaults[k]) for k in nombres}
 var_dict['duracion'] = paramvar('duracion', default=defaults['duracion'], dtype='double')
+var_dict['cant_arm'].set(cant)
 
-makeparam(cont_1, 'Frecuencia', 'Hz', var_dict['frec'], span=[0, 22000]).pack()
-makeparam(cont_1, 'Duración', 'seg', var_dict['duracion'], span=[0,20]).pack()
+makeparam(botonera_params, 'Frecuencia', 'Hz', var_dict['frec'], span=[0, 22000]).pack(pady=5)
+makeparam(botonera_params, 'Duración', 'seg', var_dict['duracion'], span=[0,20]).pack(pady=5)
 
-makeparam(cont_2, 'Frecuencia\nde sampleo', 'Hz', var_dict['fs'], span=[0,44200]).pack()
-makeparam(cont_2, 'Períodos', '  ', var_dict['pers_shown'], span=[1,10]).pack()
+makeparam(botonera_params, 'Frecuencia\nde muestreo', 'Hz', var_dict['fs'], span=[0,44200]).pack(pady=5)
+makeval(botonera_params, 'Períodos', var_dict['pers_shown'], span=[1,10]).pack(pady=5)
+makeval(botonera_params, 'Cant. de\narmónicos', var_dict['cant_arm'], span=[0, cant]).pack(pady=5)
 
-tk.Button(master=cont_2, text='Reiniciar', 
+tk.Button(master=botonera_params, text='Reiniciar', 
           command= lambda : reset_params(var_dict)).pack(pady=10)
-tk.Checkbutton(cont_2, text='Mostrar discreta', variable=var_dict['show_discreto']).pack()
+tk.Checkbutton(botonera_params, text='Mostrar discreta', variable=var_dict['show_discreto']).pack(pady=5)
 
 ###Play###
 # La caja externa
