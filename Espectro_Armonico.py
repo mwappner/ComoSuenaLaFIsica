@@ -49,13 +49,15 @@ def buscapicos(x,y,N):
         interv=y[start_i:finish_i]
         
         #El máximo en interv es la intensidad del armónico j-ésimo
-        I.append(max(interv))
+        I.append(interv.max() if interv.size else 0)
     return fundamental, I
 
+archivo = os.path.join(carpeta, 'espectros_voces.txt')
+with open(archivo, 'w') as f:
 
-with open('espectro_voces.txt', 'w') as f:
-    try:
         for este in archivos:
+            if este.endswith('txt'):
+                continue
             print(este)
 
             samplerate, data = wavfile.read(este)
@@ -99,5 +101,3 @@ with open('espectro_voces.txt', 'w') as f:
             f.write(': {} Hz\n'.format(fund))
             f.write(', '.join(ints))
             f.write('\n')
-    except ValueError:
-        pass

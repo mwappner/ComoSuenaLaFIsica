@@ -347,16 +347,16 @@ def organo():
     amps = [85, 69, 62, 20, 2, 25, 1, 100, 13, 3, 0, 67, 0, 0, 1, 25, 0, 6, 0, 2, 1]
     p.set_mode(amps)
 
-def voces_i1():
-    amps = [100.0, 37.5, 3.9, 1.9, 2.2, 3.6, 11.3, 9.8, 16.3, 10.4, 5.6, 5.9, 3.6, 2.5, 3.5, 3.3, 2.7, 0.8, 0.8, 0.4]
-    p.set_mode(amps)
-
-def voces_i2():
-    amps = [100.0, 28.5, 6.9, 4.4, 1.8, 4.6, 4.7, 4.9, 16.0, 11.9, 5.9, 5.7, 5.5, 4.8, 6.6, 2.1, 1.7, 0.7, 0.5, 0.6]
-    p.set_mode(amps)
-
 def voces_a():
     amps = [76.5, 90.0, 100.0, 68.7, 28.1, 19.2, 4.2, 2.0, 2.2, 5.1, 8.5, 9.5, 5.3, 3.5, 4.4, 3.9, 2.4, 0.8, 0.5, 0.8]
+    p.set_mode(amps)
+
+def voces_o():
+    amps = [83.3, 82.0, 100.0, 48.7, 7.5, 3.2, 1.7, 3.1, 1.2, 4.5, 4.6, 4.0, 2.8, 2.8, 6.7, 2.1, 1.1, 0.9, 0.7, 0.5]
+    p.set_mode(amps)
+
+def voces_i():
+    amps = [100.0, 26.1, 8.2, 2.8, 3.2, 2.3, 3.4, 7.1, 6.7, 6.8, 12.1, 13.3, 9.6, 13.8, 5.3, 7.0, 5.6, 3.6, 2.3, 1.4]
     p.set_mode(amps)
 
 def nada():
@@ -371,9 +371,9 @@ modos = {'Elija uno':nada,
          '  Corno':corno,
          '  Órgano':organo,
          '  Voces: "a"':voces_a,
-         '  Voces: "i"':voces_i1,
-         '  Voces "i"_2':voces_i2,
-         }
+         '  Voces: "i"':voces_i,
+         '  Voces "o"':voces_o,
+             }
 
 nuevos_modos = {}
 
@@ -569,10 +569,6 @@ botonera.grid(row=0, column=cant+1, rowspan=2, padx=10)
 # La caja externa y las dos internas
 botonera_params = tk.Frame(master=botonera, relief=tk.RIDGE, padx=3, pady=2, borderwidth=1)
 botonera_params.grid(row=0, column=0, sticky='we')
-# cont_1 = tk.Frame(botonera_params)
-# cont_1.pack(pady=10)
-# cont_2 = tk.Frame(botonera_params)
-# cont_2.pack(pady=10)
 
 # Variables
 nombres = ['frec', 'fs', 'pers_shown', 'show_discreto', 'cant_arm']
