@@ -1,0 +1,34 @@
+que se ejecute en pantalla completa y que no se pueda cerrar con la cruz (esto se puede? si no, no importa agrandamos el root.geometry y que el guia no deje que lo cierren. no se como lo va a ver jajaja tenemos que darle un polarizador para que vaya chequeando)
+
+podríamos arrancar con un cuadro 1 con un botón que diga "SALIR", "DESBLOQUEAR" o "MENSAJE OCULTO".
+
+Si clickean ahí y les aparece el cuadro 2:
+
+Introduzcan la clave. Tienen un único intento.
+__ - __ , __
+
+ingresan algo, aparece cuadro 3:
+
+¿Están seguros de que esa es la respuesta correcta?
+cancelar	aceptar
+
+si ponen aceptar
+	si contestan ok
+		felicitaciones lograron salir de sala y el mensaje final de la ciencia (que yo puedo cargar despues)...
+	si no
+		les damos otra oportunidad y pasamos al cuadro 4: "Incorrecto", "Vamos con una segunda oportunidad, pero no una tercera. 			Queda 1 intento."
+		volver al cuadro 2 con este mensaje de la segunda oportunidad		 
+si ponen cancelar
+	volver al cuadro 2 original
+
+
+Las contraseñas ok serían
+
+15 - 40 , RG
+15 - 40 , GR
+15 - 40 , rg
+15 - 40 , gr
+15 - 40 , Rg
+15 - 40 , Gr
+15 - 40 , rG
+15 - 40 , gR
